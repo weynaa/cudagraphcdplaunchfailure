@@ -10,7 +10,7 @@ void addTest( const int* bcdasdk, int* c){
 
 }
 
-//twice the same type in a parameter does not work
+//twice the same argument-type in a function does not work
 __global__
 void addTest2( void* a,void*b){
 
