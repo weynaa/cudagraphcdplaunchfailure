@@ -34,7 +34,7 @@ int main() {
     return 0;
 }
 ```
-
+On GCC 7.5 with CUDA10 this will cause a parsing error:
 ```
 In file included from /usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h:220:0:
 /tmp/tmpxft_0000359a_00000000-5_main.cudafe1.stub.c: In function ‘void __nv_cudaEntityRegisterCallback(void**)’:
