@@ -16,7 +16,7 @@ void addTest2( void* a,void*b){
 
 
 template <typename F, F f>
-__device__ constexpr F deviceSymbol = f;
+__device__ F deviceSymbol = f;
 
 int main() {
 
