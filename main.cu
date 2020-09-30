@@ -22,12 +22,12 @@ int main() {
 
     void* kernelFuncPtr;
     cudaMemcpyFromSymbol(&kernelFuncPtr,&deviceSymbol<decltype(&addTest),&addTest>,sizeof(void*));
-    printf("this pointer on the device is: %p",kernelFuncPtr);
+    printf("this pointer on the device is: %p\n",kernelFuncPtr);
 
     //This code does not compile on GCC7/CUDA10, comment it out and it should work
     void* kernelFuncPtr2;
     cudaMemcpyFromSymbol(&kernelFuncPtr2,&deviceSymbol<decltype(&addTest2),&addTest2>,sizeof(void*));
-    printf("this pointer will cause a compile-error: %p",kernelFuncPtr2);
+    printf("this pointer will cause a compile-error: %p\n",kernelFuncPtr2);
 
     return 0;
 }
