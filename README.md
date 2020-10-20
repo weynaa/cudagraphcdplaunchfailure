@@ -1,4 +1,4 @@
-Using using large child-kernels in a reused cudaGraphInstance causes Error 4(LaunchFailure) 
+Using large child-kernels in a reused cudaGraphInstance causes Error 4(LaunchFailure) 
 ```cpp
 #include <cuda.h>
 #include <cuda_runtime.h>
