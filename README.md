@@ -6,7 +6,7 @@ Using large child-kernels in a reused cudaGraphInstance causes Error 4(LaunchFai
 #include <cstdio>
 #include <cuda_device_runtime_api.h>
 __global__ void childKernel(){
-    if(threadIdx.x == 0 && blockIdx.x == 0){
+    if(threadIdx.x == 0 && blockIdx.x == 0 && blockIdx.y == 0){
         printf("hello from childKernel\n");
     }
 }
