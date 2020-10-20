@@ -3,41 +3,62 @@
 #include <cstdint>
 #include <cstdio>
 #include <cuda_device_runtime_api.h>
-// mixed types work
-__global__ void addTest(const int* bcdasdk, int* c) {
-  printf("hello from addTest()\n");
-}
-
-// twice the same type in a parameter does not work
-__global__ void addTest2(void* a, void* b) {
-  printf("hello from addTest2()\n");
-}
-
-template<typename... Args>
-__global__ void execFnPtr(void(*f)(Args...)){
-    (*f)<<<1,1>>>(nullptr,nullptr);
+__global__ void childKernel(){
+    if(threadIdx.x == 0 && blockIdx.x == 0){
+        printf("hello from childKernel\n");
+    }
 }
 
 
-template <typename F, F f>
-__device__ F deviceSymbol = f;
+__global__ void parentKernel() { 
+    childKernel<<<600000, 64>>>();
+
+    auto ret = cudaDeviceSynchronize();
+    if(ret != cudaSuccess){
+        printf("CudaStreamSynchronize failed with %i",ret);
+    }
+    printf("done\n");
+}
+
 
 int main() {
-  void (*kernelFuncPtr)(const int*, int*);
-  auto err = cudaMemcpyFromSymbol(&kernelFuncPtr,
-                       deviceSymbol<decltype(&addTest), &addTest>,
-                       sizeof(void*));
-  printf("this pointer on the device is: %p\n", kernelFuncPtr);
-  execFnPtr<<<1, 1>>>(kernelFuncPtr);
+  cudaGraph_t graph;
+  cudaGraphCreate(&graph,0);
+  cudaGraphNode_t node;
+  cudaKernelNodeParams params;
+  params.func = (void*) parentKernel;
+  params.extra = nullptr;
+  params.gridDim = dim3(1);
+  params.blockDim = dim3(1);
+  params.sharedMemBytes = 0;
+  params.kernelParams = nullptr;
+  cudaGraphAddKernelNode(&node,graph,nullptr,0,&params);
 
-  // This code does not compile on GCC7/CUDA10, comment it out and it should work
-  void (*kernelFuncPtr2)(void*, void*);
-  err = cudaMemcpyFromSymbol(&kernelFuncPtr2,
-                       deviceSymbol<decltype(&addTest2), &addTest2>,
-                       sizeof(void*));
-  printf("this pointer will cause a compile-error: %p\n", kernelFuncPtr2);
+  cudaGraphExec_t instance;
+  cudaGraphInstantiate(&instance,graph,nullptr,nullptr,0);
+  
+  cudaStream_t myStream;
+  cudaStreamCreate(&myStream);
 
-  execFnPtr<<<1, 1>>>(kernelFuncPtr2);
+  for(int i = 0; i < 100000; ++i){
+/*
+    auto err = cudaStreamSynchronize(myStream);
+    if (err != cudaSuccess) {
+      printf("CUDA Error %d occured\n", err);
+      break;
+    }*/
+    cudaGraphLaunch(instance,myStream);
+    auto err = cudaStreamSynchronize(myStream);
+    if (err != cudaSuccess) {
+      printf("CUDA Error %d occured\n", err);
+      break;
+    }
+
+  }
+  cudaGraphExecDestroy(instance);
+
+  cudaGraphDestroy(graph);
+  cudaStreamDestroy(myStream);
 
   return 0;
 }
