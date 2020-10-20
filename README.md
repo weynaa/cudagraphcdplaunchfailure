@@ -1,59 +1,75 @@
-Using non-type template parameters in a `__device__` template-variable causes a parsing error with some functions:
+Using using large child-kernels in a reused cudaGraphInstance causes Error 4(LaunchFailure) 
 ```cpp
-#include <iostream>
-#include <cstdint>
 #include <cuda.h>
-
-//mixed types work
-__global__
-void addTest( const int* bcdasdk, int* c){
-
-}
-
-//twice the same argument-type in a function does not work
-__global__
-void addTest2( void* a,void*b){
-
+#include <cuda_runtime.h>
+#include <cstdint>
+#include <cstdio>
+#include <cuda_device_runtime_api.h>
+__global__ void childKernel(){
+    if(threadIdx.x == 0 && blockIdx.x == 0){
+        printf("hello from childKernel\n");
+    }
 }
 
 
-template <typename F, F f>
-__device__ constexpr F deviceSymbol = f;
+__global__ void parentKernel() { 
+    childKernel<<<600000, 64>>>();
+
+    auto ret = cudaDeviceSynchronize();
+    if(ret != cudaSuccess){
+        printf("CudaStreamSynchronize failed with %i",ret);
+    }
+    printf("done\n");
+}
+
 
 int main() {
+  cudaGraph_t graph;
+  cudaGraphCreate(&graph,0);
+  cudaGraphNode_t node;
+  cudaKernelNodeParams params;
+  params.func = (void*) parentKernel;
+  params.extra = nullptr;
+  params.gridDim = dim3(1);
+  params.blockDim = dim3(1);
+  params.sharedMemBytes = 0;
+  params.kernelParams = nullptr;
+  cudaGraphAddKernelNode(&node,graph,nullptr,0,&params);
 
-    void* kernelFuncPtr;
-    cudaMemcpyFromSymbol(&kernelFuncPtr,&deviceSymbol<decltype(&addTest),&addTest>,sizeof(void*));
-    printf("this pointer on the device is: %p",kernelFuncPtr);
+  cudaGraphExec_t instance;
+  cudaGraphInstantiate(&instance,graph,nullptr,nullptr,0);
+  
+  cudaStream_t myStream;
+  cudaStreamCreate(&myStream);
 
-    //This code does not compile on GCC7/CUDA10, comment it out and it should work
-    void* kernelFuncPtr2;
-    cudaMemcpyFromSymbol(&kernelFuncPtr2,&deviceSymbol<decltype(&addTest2),&addTest2>,sizeof(void*));
-    printf("this pointer will cause a compile-error: %p",kernelFuncPtr2);
+  for(int i = 0; i < 100000; ++i){
+    cudaGraphLaunch(instance,myStream);
+    auto err = cudaStreamSynchronize(myStream);
+    if (err != cudaSuccess) {
+      printf("CUDA Error %d occured\n", err);
+      break;
+    }
 
-    return 0;
+  }
+  cudaGraphExecDestroy(instance);
+
+  cudaGraphDestroy(graph);
+  cudaStreamDestroy(myStream);
+
+  return 0;
 }
+
 ```
-On GCC 7.5 with CUDA10 this will cause a parsing error:
+Tested on Windows 10 18362.1139 with CUDA Toolkit 10.0 and Nvidia Driver version 456.38 on a Geforce RTX 2060
+
 ```
-In file included from /usr/lib/gcc/x86_64-linux-gnu/7/include/stddef.h:220:0:
-/tmp/tmpxft_0000359a_00000000-5_main.cudafe1.stub.c: In function ‘void __nv_cudaEntityRegisterCallback(void**)’:
-/tmp/tmpxft_0000359a_00000000-5_main.cudafe1.stub.c:1:845: error: parse error in template argument list
- #pragma GCC diagnostic push
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             ^                                                        
-/tmp/tmpxft_0000359a_00000000-5_main.cudafe1.stub.c:1:845: error: wrong number of template arguments (1, should be 2)
-/home/michael/dev/test/main.cu:19:1: note: provided for ‘template<class F, F f> constexpr const F deviceSymbol<F, f>’
- __device__ constexpr F deviceSymbol = f;
- ^~~~~~~~~~~~
-CMakeFiles/test.dir/build.make:81: recipe for target 'CMakeFiles/test.dir/main.cu.o' failed
-make[3]: *** [CMakeFiles/test.dir/main.cu.o] Error 1
-CMakeFiles/Makefile2:94: recipe for target 'CMakeFiles/test.dir/all' failed
-make[2]: *** [CMakeFiles/test.dir/all] Error 2
-CMakeFiles/Makefile2:101: recipe for target 'CMakeFiles/test.dir/rule' failed
-make[1]: *** [CMakeFiles/test.dir/rule] Error 2
-Makefile:137: recipe for target 'test' failed
-make: *** [test] Error 2
+hello from childKernel
+done
+hello from childKernel
+CUDA Error 4 occured
+
 
 ```
 
+Not reusing the graphInstance solves the problem, as well as making the kernel size smaller, but those are no options for me.
  
