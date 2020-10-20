@@ -60,7 +60,9 @@ int main() {
 }
 
 ```
-Tested on Windows 10 18362.1139 with CUDA Toolkit 10.0 and Nvidia Driver version 456.38 on a Geforce RTX 2060
+Tested on:
+- Windows 10 18362.1139 with CUDA Toolkit 10.0, VS2017 and Nvidia Driver version 456.38 on a Geforce RTX 2060
+- Kubuntu 18.04 (Kernel 5.4) with CUDA Toolkit 10.0, GCC7.5 and Nvidia driver 450.66 on a Geforce RTX 2060 
 
 ```
 hello from childKernel
@@ -71,5 +73,5 @@ CUDA Error 4 occured
 
 ```
 
-Not reusing the graphInstance solves the problem, as well as making the kernel size smaller, but those are no options for me.
+Not reusing the graphInstance solves the problem, as well as making the kernel size smaller and removing the cudaDeviceSynchronize call from the parent-kernel, which are all no options for me.
  
