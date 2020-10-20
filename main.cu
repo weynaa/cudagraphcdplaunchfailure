@@ -41,12 +41,6 @@ int main() {
   cudaStreamCreate(&myStream);
 
   for(int i = 0; i < 100000; ++i){
-/*
-    auto err = cudaStreamSynchronize(myStream);
-    if (err != cudaSuccess) {
-      printf("CUDA Error %d occured\n", err);
-      break;
-    }*/
     cudaGraphLaunch(instance,myStream);
     auto err = cudaStreamSynchronize(myStream);
     if (err != cudaSuccess) {
