@@ -4,14 +4,14 @@
 #include <cstdio>
 #include <cuda_device_runtime_api.h>
 __global__ void childKernel(){
-    if(threadIdx.x == 0 && blockIdx.x == 0){
+    if(threadIdx.x == 0 && blockIdx.x == 0 && blockIdx.y == 0){
         printf("hello from childKernel\n");
     }
 }
 
 
 __global__ void parentKernel() { 
-    childKernel<<<600000, 64>>>();
+    childKernel<<<dim3(60000,10), 64>>>();
 
     auto ret = cudaDeviceSynchronize();
     if(ret != cudaSuccess){
