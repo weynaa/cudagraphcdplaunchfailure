@@ -60,9 +60,9 @@ int main() {
 }
 
 ```
-Tested on:
-- Windows 10 18362.1139 with CUDA Toolkit 10.0, VS2017 and Nvidia Driver version 456.38 on a Geforce RTX 2060
-- Kubuntu 18.04 (Kernel 5.4) with CUDA Toolkit 10.0, GCC7.5 and Nvidia driver 450.66 on a Geforce RTX 2060 
+Tested on a Geforce RTX 2060 and these plaforms:
+- Windows 10 18362.1139 with CUDA Toolkit 10.0, VS2017 and Nvidia Driver version 456.38
+- Kubuntu 18.04 (Kernel 5.4) with CUDA Toolkit 10.0, GCC7.5 and Nvidia driver 450.66
 
 ```
 hello from childKernel
