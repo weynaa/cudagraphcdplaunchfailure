@@ -13,7 +13,7 @@ __global__ void childKernel(){
 
 
 __global__ void parentKernel() { 
-    childKernel<<<600000, 64>>>();
+    childKernel<<<dim3(60000,10), 64>>>();
 
     auto ret = cudaDeviceSynchronize();
     if(ret != cudaSuccess){
